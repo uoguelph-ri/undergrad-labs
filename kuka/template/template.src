@@ -1,0 +1,126 @@
+&ACCESS RVP
+&REL 7
+&PARAM EDITMASK = *
+&PARAM TEMPLATE = C:\KRC\Roboter\Template\vorgabe
+DEF template( )
+
+  E6POS my_point
+
+  ;FOLD INI;%{PE}
+    ;FOLD BASISTECH INI
+      GLOBAL INTERRUPT DECL 3 WHEN $STOPMESS==TRUE DO IR_STOPM ( )
+      INTERRUPT ON 3 
+      BAS (#INITMOV,0 )
+    ;ENDFOLD (BASISTECH INI)
+    ;FOLD USER INI
+      ;Make your modifications here
+
+    ;ENDFOLD (USER INI)
+  ;ENDFOLD (INI)
+
+
+  ;FOLD OUT 13 '' State=FALSE CONT;%{PE}%R 8.3.31,%MKUKATPBASIS,%COUT,%VOUTX,%P 2:13, 3:, 5:FALSE, 6:CONTINUE
+  CONTINUE
+  $OUT[13]=FALSE
+  ;ENDFOLD
+
+  ;FOLD OUT 14 '' State=FALSE CONT;%{PE}%R 8.3.31,%MKUKATPBASIS,%COUT,%VOUTX,%P 2:14, 3:, 5:FALSE, 6:CONTINUE
+  CONTINUE
+  $OUT[14]=FALSE
+  ;ENDFOLD
+  ;FOLD PTP P1 Vel=100 % PDAT1 Tool[1] Base[0];%{PE}%R 8.3.31,%MKUKATPBASIS,%CMOVE,%VPTP,%P 1:PTP, 2:P1, 3:, 5:100, 7:PDAT1
+  $BWDSTART=FALSE
+  PDAT_ACT=PPDAT1
+  FDAT_ACT=FP1
+  BAS(#PTP_PARAMS,100)
+  PTP XP1 
+  ;ENDFOLD
+
+  ; move 100mm in the Z direction relative to tool coordinates
+  PTP $POS_ACT : {X 0.0, Y 0.0, Z 100.0, A 0.0, B 0.0, C 0.0} 
+
+  ; move 100mm in the Z direction relative to world coordinates
+  my_point.X = $POS_ACT.X
+  my_point.Y = $POS_ACT.Y
+  my_point.Z = $POS_ACT.Z + 100
+  my_point.A = $POS_ACT.A
+  my_point.B = $POS_ACT.B
+  my_point.C = $POS_ACT.C
+
+  PTP my_point
+
+  close_gripper()
+  WAIT SEC 3
+  open_gripper()
+  WAIT SEC 3
+  close_gripper()
+
+  ; show input values in status bar
+  NOTIFY(read_inputs())
+END
+
+DEF close_gripper()
+  $OUT[7]=TRUE
+  $OUT[10]=FALSE
+  $OUT[8]=FALSE
+  $OUT[11]=TRUE
+END
+
+DEF open_gripper()
+  $OUT[7]=FALSE
+  $OUT[10]=TRUE
+  $OUT[8]=TRUE
+  $OUT[11]=FALSE
+END
+
+; display an integer in the status bar on the teach pendant 
+DEF NOTIFY(val:IN)
+  ;FOLD Declarations
+    DECL KRLMSG_T mymessage
+    DECL KRLMSGPAR_T mypar[3]
+    decl KRLMSGOPT_T myoptions
+    int nhandle
+    real val
+  ;ENDFOLD (Declarations)
+   
+  mypar[1] = {par_type #value, par_real 0.0}
+  mypar[1].par_real = val
+
+  mymessage = {modul[] "User", Nr 123, msg_txt[] "Program Notify: %1"}
+  nhandle = SET_KRLMSG(#notify, mymessage, mypar[], myoptions)
+END
+
+; read all 6 I/O inputs and display them on the teach pendant
+DEFFCT INT read_inputs()
+
+  INT input_status
+  input_status = 6000000
+
+  IF $IN[1] THEN
+    input_status = input_status + 100000
+  ENDIF
+
+  IF $IN[2] THEN
+    input_status = input_status + 10000
+  ENDIF
+
+  IF $IN[3] THEN
+    input_status = input_status + 1000
+  ENDIF
+
+  IF $IN[4] THEN
+    input_status = input_status + 100
+  ENDIF
+
+  IF $IN[5] THEN
+    input_status = input_status + 10
+  ENDIF
+
+  IF $IN[6] THEN
+    input_status = input_status + 1
+  ENDIF
+
+  RETURN input_status
+
+ENDFCT
+
