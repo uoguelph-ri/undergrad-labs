@@ -5,3 +5,4 @@ Includes demos for:
   - CRS
   - KUKA 900 sixx
   - Baxter
+  - Fanuc
