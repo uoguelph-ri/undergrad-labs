@@ -4,8 +4,8 @@ from colorama import Fore, Style # Adds colour to console output
 from robot_loc_world import RobotLocWorld
 from robot_loc_joint import RobotLocJoint
 
-ROBOT_IP = "192.168.1.1"
-SERVER_IP = "192.168.1.100"
+SERVER_IP = "192.168.1.1"
+ROBOT_IP = "192.168.1.100"
 TCP_PORT = 64555
 ROBOT_MOTION_DELAY = 0.1
 
