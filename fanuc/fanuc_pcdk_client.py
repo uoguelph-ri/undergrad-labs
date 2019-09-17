@@ -11,7 +11,7 @@ ROBOT_MOTION_DELAY = 0.1
 
 class FanucPCDKClient:
     """Establishes connection between client, server, and robot while including various methods for robot"""
-    def __init__(self, print_server_output = True):
+    def __init__(self, print_server_output = False):
         self.mySocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.buffer_size = 1024
         self.debug_output = print_server_output
