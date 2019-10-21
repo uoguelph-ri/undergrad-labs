@@ -1,0 +1,18 @@
+version: '2.3'
+
+services:
+  oldpython:
+    stdin_open: true
+    tty: true
+    
+    build:
+      context: .
+      dockerfile: oldpython.dockerfile
+    ports:
+      - "8889:8889"
+    volumes:
+      - ../../data:/data
+      - ../../:/code
+
+    working_dir: /code/baxter/notebooks
+    command: ipython notebook --port=8889 --ip=0.0.0.0 --no-browser

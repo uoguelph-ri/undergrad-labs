@@ -1,0 +1,147 @@
+&ACCESS RVP
+&REL 9
+&PARAM EDITMASK = *
+&PARAM TEMPLATE = C:\KRC\Roboter\Template\vorgabe
+&PARAM DISKPATH = KRC:\R1\Program\examples
+DEF example001( )
+  ; The lines about starting with & do not count as line numbers in the error display
+  ; ------------- UoG -----------------
+  ; Start your declarations here
+  ; -----------------------------------
+  E6POS my_point
+  DECL POS my_position
+
+  ; ------------- UoG -----------------
+  ; Stop your declarations here
+  ; -----------------------------------
+
+
+  ;FOLD INI;%{PE}
+    ;FOLD BASISTECH INI
+      GLOBAL INTERRUPT DECL 3 WHEN $STOPMESS==TRUE DO IR_STOPM ( )
+      INTERRUPT ON 3 
+      BAS (#INITMOV,0 )
+    ;ENDFOLD (BASISTECH INI)
+    ;FOLD USER INI
+      ;Make your modifications here
+    ;ENDFOLD (USER INI)
+  ;ENDFOLD (INI)
+
+  ; ------------- UoG -----------------
+  ; Start your program here
+  ; -----------------------------------
+
+  ; move to position set on the teach pendent 
+  ;FOLD PTP P2 Vel=100 % PDAT2 Tool[1] Base[0];%{PE}%R 8.3.31,%MKUKATPBASIS,%CMOVE,%VPTP,%P 1:PTP, 2:P2, 3:, 5:100, 7:PDAT2
+  $BWDSTART=FALSE
+  PDAT_ACT=PPDAT2
+  FDAT_ACT=FP2
+  BAS(#PTP_PARAMS,100)
+  PTP XP2 
+  ;ENDFOLD
+
+  ; move to absolute joint coordinates using Point to Point (PTP)
+  ; PTP means the robot will not travel in a straight line
+  PTP {A1 90, A2 -60, A3 90, A4 0, A5 0, A6 0}
+
+  ; move to absolute world coordinates
+  PTP {X 60, Y -740, Z 600, A 110, B 85, C -160}
+  
+  ; move 100mm in the Z direction relative to tool coordinates
+  PTP $POS_ACT : {X 0.0, Y 0.0, Z 100.0, A 0.0, B 0.0, C 0.0} 
+
+  ; move 100mm in the Z direction relative to world coordinates
+  my_point.X = $POS_ACT.X
+  my_point.Y = $POS_ACT.Y
+  my_point.Z = $POS_ACT.Z + 100
+  my_point.A = $POS_ACT.A
+  my_point.B = $POS_ACT.B
+  my_point.C = $POS_ACT.C
+  ; move using linear (LIN)
+  LIN my_point
+
+  close_gripper()
+  WAIT SEC 3
+  open_gripper()
+  WAIT SEC 3
+  close_gripper()
+
+  ; show input values in status bar. 
+  ; will display 6000000 if all inputs are low
+  ; will display 6010000 if input 2 is high and others are low
+  ; will display 6000011 if inputs 5 and 6 are high and others low
+  NOTIFY(read_inputs())
+
+  ; ------------- UoG -----------------
+  ; Stop your program here
+  ; -----------------------------------
+
+END
+
+
+
+DEF close_gripper()
+  $OUT[7]=TRUE
+  $OUT[10]=FALSE
+  $OUT[8]=FALSE
+  $OUT[11]=TRUE
+END
+
+DEF open_gripper()
+  $OUT[7]=FALSE
+  $OUT[10]=TRUE
+  $OUT[8]=TRUE
+  $OUT[11]=FALSE
+END
+
+; display an integer in the status bar on the teach pendant 
+DEF NOTIFY(val:IN)
+  ;FOLD Declarations
+    DECL KRLMSG_T mymessage
+    DECL KRLMSGPAR_T mypar[3]
+    decl KRLMSGOPT_T myoptions
+    int nhandle
+    real val
+  ;ENDFOLD (Declarations)
+   
+  mypar[1] = {par_type #value, par_real 0.0}
+  mypar[1].par_real = val
+
+  mymessage = {modul[] "User", Nr 123, msg_txt[] "Program Notify: %1"}
+  nhandle = SET_KRLMSG(#notify, mymessage, mypar[], myoptions)
+END
+
+; read all 6 I/O inputs and display them on the teach pendant
+DEFFCT INT read_inputs()
+
+  INT input_status
+  input_status = 6000000
+
+  IF $IN[1] THEN
+    input_status = input_status + 100000
+  ENDIF
+
+  IF $IN[2] THEN
+    input_status = input_status + 10000
+  ENDIF
+
+  IF $IN[3] THEN
+    input_status = input_status + 1000
+  ENDIF
+
+  IF $IN[4] THEN
+    input_status = input_status + 100
+  ENDIF
+
+  IF $IN[5] THEN
+    input_status = input_status + 10
+  ENDIF
+
+  IF $IN[6] THEN
+    input_status = input_status + 1
+  ENDIF
+
+  RETURN input_status
+
+ENDFCT
+
